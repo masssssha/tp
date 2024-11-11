@@ -43,6 +43,6 @@ for i in range(len(dir_set)):
     data[i+1][7] = maximum.index(np.max(maximum))
     print(data[i+1][0], time.ctime())
 
-with open('dcm_info.tsv', 'w') as file:
+with open('/home/masha/tp/results/dcm_info.tsv', 'w') as file:
     writer = csv.writer(file, delimiter='\t')
     writer.writerows(data)

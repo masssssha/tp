@@ -4,6 +4,7 @@ import csv
 import matplotlib.pyplot as plt
 import cv2
 import time
+import os
 
 def MSE(phantom: np.ndarray, recon: np.ndarray) -> np.float32:
     """Calculate mean squared error.
@@ -113,12 +114,14 @@ def main():
 
             avg_mse[count+1][0] = 100 + 2*count
             avg_mse[count+1][1] += mse_low/(np.shape(clean_vol)[0] * len(content))
-            avg_mse[count+1][2] = mse_clinical/(np.shape(clean_vol)[0] * len(content))
+            avg_mse[count+1][2] += mse_clinical/(np.shape(clean_vol)[0] * len(content))
 
             print(f'Finished radius {100+2*count}', time.ctime())
-        save_table(tab_mse_circle, f'/home/masha/results/mamse/MAMSE_{content[id]}')
+        if not os.path.isdir('results/MAMSE'):
+            os.mkdir('results/MAMSE')
+        save_table(tab_mse_circle, f'/home/masha/tp/results/MAMSE/MAMSE_circle_{content[id]}')
         print(f'Finished {content[id]}', time.ctime())
-    save_table(avg_mse, '/home/masha/results/Average_MAMSE')
+    save_table(avg_mse, '/home/masha/tp/results/Average_MAMSE')
     
 if __name__ == "__main__":
     main()
