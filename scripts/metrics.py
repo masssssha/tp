@@ -7,6 +7,18 @@ import os
 import torch
 from pytorch_ssim import ssim
 
+folder_with_data = '/home/masha/validate.vol'
+data_id = '/home/masha/number.txt'
+path_to_save = '/home/masha/results_2_float32'
+header = ['radius', 'low', 'clinical']
+rad_circle_start = 100
+rad_circle_end = 182
+radius_circle = [i for i in range(rad_circle_start, rad_circle_end + 1, 2)]
+rad_square_start = 70
+rad_square_end = 128
+radius_square = [i for i in range(rad_square_start, rad_square_end + 1, 2)]
+func_list = ['MASSIM']
+
 class ImError(Exception):
     def __init__(self, shape_1, shape_2, shape_3):
         self.shape_1 = shape_1
@@ -104,6 +116,9 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     value = ssim(img_1, img_2, 1.0, mask=mask_copy)
     return value
 
+func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM, 'MASTRESS': MASTRESS,
+             'MANRMSD': MANRMSD}
+
 def create_circle_mask(radius: int) -> np.ndarray:
     mask = cv2.circle(np.zeros((256, 256)), (128, 128), radius, (1), -1)
     return mask
@@ -122,54 +137,101 @@ def save_table(table: list[list], filename: str) -> None:
         writer = csv.writer(file, delimiter='\t')
         writer.writerows(table)
 
-def main():
-    folder = '/home/masha/validate.vol'
-    file_txt = '/home/masha/number.txt'
-    with open(file_txt, 'r') as file:
-        content = file.read().split('\n')
-    header = ['radius', 'low', 'clinical']
+def calculate_statistics_circle(func_lst: list[str], vol_ref: np.ndarray, 
+                        vol_low: np.ndarray, vol_clinical: np.ndarray, mask: list, id: int) -> None:
+    tables = []
+    slices = np.shape(vol_ref)[0]
+    for i in range(len(func_lst)):
+        tab = [[0 for j in range(3)] for k in range(len(mask)+1)]
+        tab[0] = header
+        tables.append(tab)
+    for rad_id in range(len(mask)):
+        for n_slice in range(slices):
+            for i in range(len(func_lst)):
+                if func_lst[i] == 'MASSIM':
+                    img_1 = normalized(vol_ref[n_slice])
+                    img_2 = normalized(vol_low[n_slice])
+                    img_3 = normalized(vol_clinical[n_slice])
+                else:
+                    img_1 = vol_ref[n_slice]
+                    img_2 = vol_low[n_slice]
+                    img_3 = vol_clinical[n_slice]
+                tables[i][rad_id+1][0] = radius_circle[rad_id]
+                tables[i][rad_id+1][1] += (func_dict[func_lst[i]](img_1, img_2, mask[rad_id]))/slices
+                tables[i][rad_id+1][2] += (func_dict[func_lst[i]](img_1, img_3, mask[rad_id]))/slices
 
-    avg_ssim = [[0 for j in range(3)] for i in range(100, 184+1, 2)]
-    avg_ssim[0] = header
+    for i in range(len(func_lst)):
+        if not os.path.isdir(f'{path_to_save}/{func_lst[i]}_circle'):
+            os.mkdir(f'{path_to_save}/{func_lst[i]}_circle')
+        save_table(tables[i], f'{path_to_save}/{func_lst[i]}_circle/{func_lst[i]}_{id}')
+
+def calculate_statistics_square_crop(func_lst: list[str], vol_ref: np.ndarray, 
+                        vol_low: np.ndarray, vol_clinical: np.ndarray, mask: list, id: int) -> None:
+    tables_square = []
+    tables_crop = []
+    slices = np.shape(vol_ref)[0]
+    for i in range(len(func_lst)):
+        tab = [[0 for j in range(3)] for k in range(len(mask)+1)]
+        tab[0] = header
+        tables_square.append(tab)
+        tab = [[0 for j in range(3)] for k in range(len(mask)+1)]
+        tab[0] = header
+        tables_crop.append(tab)
+    for rad_id in range(len(mask)):
+        for n_slice in range(slices):
+            for i in range(len(func_lst)):
+                if func_lst[i] == 'MASSIM':
+                    img_1 = normalized(vol_ref[n_slice])
+                    img_2 = normalized(vol_low[n_slice])
+                    img_3 = normalized(vol_clinical[n_slice])
+                else:
+                    img_1 = vol_ref[n_slice]
+                    img_2 = vol_low[n_slice]
+                    img_3 = vol_clinical[n_slice]
+                tables_square[i][rad_id+1][0] = radius_square[rad_id]
+                tables_square[i][rad_id+1][1] += (func_dict[func_lst[i]](img_1, img_2, mask[rad_id]))/slices
+                tables_square[i][rad_id+1][2] += (func_dict[func_lst[i]](img_1, img_3, mask[rad_id]))/slices
+                crop_1 = create_crop(img_1, radius_square[rad_id])
+                crop_2 = create_crop(img_2, radius_square[rad_id])
+                crop_3 = create_crop(img_3, radius_square[rad_id])
+
+                tables_crop[i][rad_id+1][0] = radius_square[rad_id]
+                tables_crop[i][rad_id+1][1] += (func_dict[func_lst[i]](crop_1, crop_2))/slices
+                tables_crop[i][rad_id+1][2] += (func_dict[func_lst[i]](crop_1, crop_3))/slices
+
+    for i in range(len(func_lst)):
+        if not os.path.isdir(f'{path_to_save}/{func_lst[i]}_square'):
+            os.mkdir(f'{path_to_save}/{func_lst[i]}_square')
+        save_table(tables_square[i], f'{path_to_save}/{func_lst[i]}_square/{func_lst[i]}_{id}')
+        if not os.path.isdir(f'{path_to_save}/{func_lst[i]}_crop'):
+            os.mkdir(f'{path_to_save}/{func_lst[i]}_crop')
+        save_table(tables_crop[i], f'{path_to_save}/{func_lst[i]}_crop/{func_lst[i]}_{id}')
+
+def main():
+    with open(data_id, 'r') as file:
+        content = file.read().split('\n')
 
     for id in range(len(content)):
-        print(f'Started {content[id]}', ctime())
-
-        #create tables
-        tab_ssim_circle = [[0 for j in range(3)] for i in range(100, 184+1, 2)]
-        tab_ssim_circle[0] = header
+        print(f'Started {content[id]}', time.ctime())
 
         #load data
-        clean_vol = np.load(f'{folder}/{content[id]}_clean_fdk_256.npy')
-        fdk_low_dose = np.load(f'{folder}/{content[id]}_fdk_low_dose_256.npy')
-        fdk_clinical_dose = np.load(f'{folder}/{content[id]}_fdk_clinical_dose_256.npy')
+        clean_vol = np.float64(np.load(f'{folder_with_data}/{content[id]}_clean_fdk_256.npy'))
+        fdk_low_dose = np.float64(np.load(f'{folder_with_data}/{content[id]}_fdk_low_dose_256.npy'))
+        fdk_clinical_dose = np.float64(np.load(f'{folder_with_data}/{content[id]}_fdk_clinical_dose_256.npy'))
 
         #create masks
         circle_masks = []
-        for j in range(100, 182+1, 2):
+        for j in range(rad_circle_start, rad_circle_end+1, 2):
             circle_masks.append(create_circle_mask(j))
+
+        square_masks = []
+        for j in range(rad_square_start, rad_square_end+1, 2):
+            square_masks.append(create_square_mask(j))
         
-        #calculate statistics for rad. across all slices
-        for count in range(len(circle_masks)):
-            ssim_low, ssim_clinical = 0, 0
-            for n_slice in range(np.shape(clean_vol)[0]):
-                ssim_low += MASSIM(clean_vol[n_slice], fdk_low_dose[n_slice], circle_masks[count])
-                ssim_clinical += MASSIM(clean_vol[n_slice], fdk_clinical_dose[n_slice], circle_masks[count])
-
-            tab_ssim_circle[count+1][0] = 100 + 2*count
-            tab_ssim_circle[count+1][1] = ssim_low/np.shape(clean_vol)[0]
-            tab_ssim_circle[count+1][2] = ssim_clinical/np.shape(clean_vol)[0]
-
-            avg_ssim[count+1][0] = 100 + 2*count
-            avg_ssim[count+1][1] += ssim_low/(np.shape(clean_vol)[0] * len(content))
-            avg_ssim[count+1][2] += ssim_clinical/(np.shape(clean_vol)[0] * len(content))
-
-            print(f'Finished radius {100+2*count}', ctime())
-        if not os.path.isdir('results/MASSIM'):
-            os.mkdir('results/MASSIM')
-        save_table(tab_ssim_circle, f'/home/masha/tp/results/MASSIM/MASSIM_circle_{content[id]}')
-        print(f'Finished {content[id]}', ctime())
-    save_table(avg_ssim, '/home/masha/tp/results/Average_MASSIM')
+        calculate_statistics_circle(func_list, clean_vol, fdk_low_dose, fdk_clinical_dose, circle_masks, 801+id)
+        print('Calculated circle', time.ctime())
+        calculate_statistics_square_crop(func_list, clean_vol, fdk_low_dose, fdk_clinical_dose, square_masks, 801+id)
+        print(f'Finished {content[id]}', time.ctime())
     
 if __name__ == "__main__":
     main()
