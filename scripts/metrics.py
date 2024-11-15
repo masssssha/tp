@@ -2,14 +2,14 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 import cv2
-from time import ctime
+import time
 import os
 import torch
 from pytorch_ssim import ssim
 
 folder_with_data = '/home/masha/validate.vol'
 data_id = '/home/masha/number.txt'
-path_to_save = '/home/masha/results_2_float32'
+path_to_save = '/home/masha/tp/results'
 header = ['radius', 'low', 'clinical']
 rad_circle_start = 100
 rad_circle_end = 182
@@ -45,7 +45,7 @@ def MAMSE(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None) -> np
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
-    if np.shape(phantom) != np.shape(recon) != np.shape(mask):
+    if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
         raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
     img_1 = phantom.copy()
     img_2 = recon.copy()
@@ -103,7 +103,7 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
-    if np.shape(phantom) != np.shape(recon) != np.shape(mask):
+    if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
         raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
     img_1 = phantom.copy()
     img_2 = recon.copy()
@@ -114,28 +114,36 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     mask_copy = make_tensor(mask_copy)
     mask_copy = mask_copy.bool()
     value = ssim(img_1, img_2, 1.0, mask=mask_copy)
-    return value
+    return value.item()
 
-func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM, 'MASTRESS': MASTRESS,
-             'MANRMSD': MANRMSD}
+func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM}
 
 def create_circle_mask(radius: int) -> np.ndarray:
+    """Create circle mask by radius."""
     mask = cv2.circle(np.zeros((256, 256)), (128, 128), radius, (1), -1)
     return mask
 
 def create_square_mask(radius: int) -> np.ndarray:
+    """Create square mask by half the side of a square."""
     mask = cv2.rectangle(np.zeros((256, 256)), (128-radius, 128-radius), 
                          (127+radius, 127+radius), (1), -1)
     return mask
 
 def create_crop(ref: np.ndarray, radius: int) -> np.ndarray:
+    """Create creates a square cutout from an image corresponding to half the side of a square."""
     img = ref.copy()
     return img[(128-radius):(128+radius), (128-radius):(128+radius)]
 
-def save_table(table: list[list], filename: str) -> None:
-    with open(f'{filename}.tsv', 'w') as file:
-        writer = csv.writer(file, delimiter='\t')
-        writer.writerows(table)
+def save_table(table: list[list], filename: str, path_to_save: str = None) -> None:
+    """Save table."""
+    if path_to_save is None:
+        with open(f'{filename}.tsv', 'w') as file:
+            writer = csv.writer(file, delimiter='\t')
+            writer.writerows(table)
+    else:
+        with open(f'{path_to_save}/{filename}.tsv', 'w') as file:
+            writer = csv.writer(file, delimiter='\t')
+            writer.writerows(table)
 
 def calculate_statistics_circle(func_lst: list[str], vol_ref: np.ndarray, 
                         vol_low: np.ndarray, vol_clinical: np.ndarray, mask: list, id: int) -> None:

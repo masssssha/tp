@@ -3,7 +3,7 @@ import numpy as np
 from os.path import dirname
 import sys
 
-def vizualize(img: np.ndarray, filename: str, save: bool = True, show: bool = True):
+def vizualize(img: np.ndarray, filename: str, save: bool = True, show: bool = True, path_to_save: str = None):
     """Parameters:
         img: np.ndarray, shape(n, m)
         filename: str
@@ -13,6 +13,9 @@ def vizualize(img: np.ndarray, filename: str, save: bool = True, show: bool = Tr
     plt.title(filename)
     plt.colorbar()
     if save:
-        plt.savefig(dirname(dirname(sys.argv[0])) + '/images/' + filename)
+        if path_to_save is None:
+            plt.savefig(filename)
+        else:
+            plt.savefig(path_to_save + '/' + filename)
     if show:
         plt.show()

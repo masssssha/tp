@@ -1,34 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
-import os.path
+from os.path import dirname
 import sys
-
-def tsv_to_arr(file: str) -> tuple[list, list, list]:
-    """
-    Return lists: radius, low_dose, clinical_dose based on data from file(.tsv).
-
-    Parameters:
-    file : str
-        Absolute file name of tsv format.
-    """
-    with open(file, 'r', newline='\n') as file:
-        reader = csv.reader(file, delimiter='\t')
-        data = [row for row in reader]
-
-    radius = []
-    low_dose = []
-    clinical_dose = []
-
-    for i in range(1, len(data)):
-        radius.append(np.float32(data[i][0]))
-        low_dose.append(np.float32(data[i][1]))
-        clinical_dose.append(np.float32(data[i][2]))
-
-    return radius, low_dose, clinical_dose
+from tsv_to_array import tsv_to_arr
 
 def create_plot(x: list, y: list, z: list, label_1: str, label_2: str, filename: str,  xlabel: str, 
-              ylabel: str, xticks: list, yticks: list) -> None:
+              ylabel: str, xticks: list, yticks: list, path_to_save: str = None) -> None:
     plt.figure()
     plt.plot(x, y, label=label_1)
     plt.plot(x, z, label=label_2)
@@ -40,15 +18,21 @@ def create_plot(x: list, y: list, z: list, label_1: str, label_2: str, filename:
     plt.yticks(yticks)
     plt.grid()
     plt.legend()
-    plt.savefig(f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/images/{filename}')
+    if path_to_save is None:
+        plt.savefig(filename)
+    else:
+        plt.savefig(f'{path_to_save}/{filename}')
     plt.show()
 
 def main():
-    radius, low, clinical = tsv_to_arr('C:/Users/mehov/tp/Average_MAMSE.tsv')
-    minimum_y = round(min(min(low), min(clinical)), 2)
-    maximum_y = round(max(max(low), max(clinical)), 2)
-    create_plot(radius, low, clinical, 'low', 'clinical', 'MAMSE (radius)', 'radius', 'MAMSE',
-                np.arange(radius[0], radius[-1], 10), np.arange(minimum_y, maximum_y, 0.01))
+    folder = f'{dirname(dirname(sys.argv[0]))}/results/'
+    filename = 'Average_MASSIM_square.tsv'
+    radius, low, clinical = tsv_to_arr(folder+filename)
+    minimum_y = round(min(min(low), min(clinical)), 1)
+    maximum_y = round(max(max(low), max(clinical)), 1)
+    create_plot(radius, low, clinical, 'low', 'clinical', 'MASSIM_circle (radius)', 'radius', 'MASSIM',
+                np.arange(radius[0], radius[-1], 10), np.arange(minimum_y, maximum_y, 0.1), 
+                f'{dirname(dirname(sys.argv[0]))}/images')
 
 if __name__ == "__main__":
     main()
