@@ -1,6 +1,7 @@
 import os
 from tsv_to_array import tsv_to_arr
 from metrics import save_table
+import sys
 
 def create_avg_from_table(folder: str, rows: int, cols: int, header: list, filename: str,
                           folder_to_save: str):
@@ -16,8 +17,8 @@ def create_avg_from_table(folder: str, rows: int, cols: int, header: list, filen
     save_table(avg, filename, folder_to_save)
 
 def main():
-    create_avg_from_table('/home/masha/tp/results/MASSIM_crop', 43, 3, ['radius', 'low', 'clinical'], 
-                          'Average_MASSIM_crop', '/home/masha/tp/results')
+    create_avg_from_table(f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results/MASSIM_square', 31, 3, ['radius', 'low', 'clinical'], 
+                          'Average_MASSIM_square', f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results')
 
 if __name__ == "__main__":
     main()

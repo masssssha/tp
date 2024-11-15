@@ -116,7 +116,35 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     value = ssim(img_1, img_2, 1.0, mask=mask_copy)
     return value.item()
 
-func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM}
+def MASTRESS(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
+    if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
+        raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
+    img_1 = phantom.copy()
+    img_2 = recon.copy()
+    img_1[mask == 0] = 0
+    img_2[mask == 0] = 0
+    dot_prod = np.sum((img_1 * img_2))
+    recon_l2 = np.sum(img_2 ** 2)
+    phantom_l2 = np.sum(img_1 ** 2)
+    result = dot_prod / (recon_l2 * phantom_l2) ** 0.5
+    result *= result
+    result = 1 - result
+    result = result ** 0.5
+    return result
+
+def MANRMSD(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
+    if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
+        raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
+    img_1 = phantom.copy()
+    img_2 = recon.copy()
+    img_1[mask == 0] = 0
+    img_2[mask == 0] = 0
+    diff_sqr = np.zeros((recon.shape[0], recon.shape[1]))
+    diff_sqr = (img_2 - img_1) ** 2
+    nrmsd = (np.sum(diff_sqr) / np.sum(img_1 ** 2)) ** 0.5
+    return nrmsd
+
+func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM, 'MASTRESS': MASTRESS, 'MANRMSD': MANRMSD}
 
 def create_circle_mask(radius: int) -> np.ndarray:
     """Create circle mask by radius."""
@@ -223,9 +251,9 @@ def main():
         print(f'Started {content[id]}', time.ctime())
 
         #load data
-        clean_vol = np.float64(np.load(f'{folder_with_data}/{content[id]}_clean_fdk_256.npy'))
-        fdk_low_dose = np.float64(np.load(f'{folder_with_data}/{content[id]}_fdk_low_dose_256.npy'))
-        fdk_clinical_dose = np.float64(np.load(f'{folder_with_data}/{content[id]}_fdk_clinical_dose_256.npy'))
+        clean_vol = np.load(f'{folder_with_data}/{content[id]}_clean_fdk_256.npy')
+        fdk_low_dose = np.load(f'{folder_with_data}/{content[id]}_fdk_low_dose_256.npy')
+        fdk_clinical_dose = np.load(f'{folder_with_data}/{content[id]}_fdk_clinical_dose_256.npy')
 
         #create masks
         circle_masks = []

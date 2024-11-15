@@ -19,7 +19,7 @@ def tsv_to_arr(file: str) -> tuple[list, list, list]:
 
     for i in range(1, len(data)):
         radius.append(int(data[i][0]))
-        low_dose.append(np.float64(data[i][1]))
-        clinical_dose.append(np.float64(data[i][2]))
+        low_dose.append(np.float32(data[i][1]))
+        clinical_dose.append(np.float32(data[i][2]))
 
     return radius, low_dose, clinical_dose
