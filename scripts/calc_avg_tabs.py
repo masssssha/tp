@@ -17,8 +17,8 @@ def create_avg_from_table(folder: str, rows: int, cols: int, header: list, filen
     save_table(avg, filename, folder_to_save)
 
 def main():
-    create_avg_from_table(f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results/MASSIM_square', 31, 3, ['radius', 'low', 'clinical'], 
-                          'Average_MASSIM_square', f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results')
+    create_avg_from_table(f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results/MANRMSD_circle', 43, 3, ['radius', 'low', 'clinical'], 
+                          'Average_MANRMSD_circle', f'{os.path.dirname(os.path.dirname(sys.argv[0]))}/results')
 
 if __name__ == "__main__":
     main()
