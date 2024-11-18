@@ -117,6 +117,23 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     return value.item()
 
 def MASTRESS(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
+    """Calculate Masked standardised residual sum of squares.
+    
+    Parameters:
+        phantom: np.ndarray, shape (n, n)
+        Correct values.
+
+        recon: np.ndarray, shape (n, n)
+        Estimated values.
+
+        mask: np.ndarray
+        Mask by which the MASTRESS should be calculated. If None, a new mask will be created according to np.shape(phantom).
+    Returns:
+        value: np.float32 
+        Masked standardised residual sum of squares.
+    """
+    if mask is None:
+        mask = np.ones(np.shape(phantom))
     if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
         raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
     img_1 = phantom.copy()
@@ -133,6 +150,23 @@ def MASTRESS(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
     return result
 
 def MANRMSD(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
+    """Calculate Masked normalized root mean squared difference.
+    
+    Parameters:
+        phantom: np.ndarray, shape (n, n)
+        Correct values.
+
+        recon: np.ndarray, shape (n, n)
+        Estimated values.
+
+        mask: np.ndarray
+        Mask by which the MANRMSD should be calculated. If None, a new mask will be created according to np.shape(phantom).
+    Returns:
+        value: np.float32 
+        Masked normalized root mean squared difference.
+    """
+    if mask is None:
+        mask = np.ones(np.shape(phantom))
     if np.shape(phantom) != np.shape(recon) or np.shape(phantom) != np.shape(mask):
         raise ImError(np.shape(phantom), np.shape(recon), np.shape(mask))
     img_1 = phantom.copy()
