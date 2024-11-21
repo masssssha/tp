@@ -204,7 +204,7 @@ def create_square_mask(radius: int) -> np.ndarray:
 def create_crop(ref: np.ndarray, radius: int) -> np.ndarray:
     """Create creates a square cutout from an image corresponding to half the side of a square."""
     img = ref.copy()
-    return img[(128-radius):(128+radius), (128-radius):(128+radius)]
+    return img[:, (128-radius):(128+radius), (128-radius):(128+radius)]
 
 def save_table(table: list[list], filename: str, path_to_save: str = None) -> None:
     """Save table."""
