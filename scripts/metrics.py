@@ -31,17 +31,18 @@ def MAMSE(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None) -> np
     """Calculate Masked Mean Squared Error.
     
     Parameters:
-        phantom: np.ndarray, shape (n, n)
-        Correct values.
+        phantom : np.ndarray, shape (n, n))
+            Correct values.
 
-        recon: np.ndarray, shape (n, n)
-        Estimated values.
+        recon : np.ndarray, shape (n, n)
+            Estimated values.
 
-        mask: np.ndarray
-        Mask by which the MAMSE should be calculated. If None, a new mask will be created according to np.shape(phantom).
+        mask : np.ndarray
+            Mask by which the MAMSE should be calculated. 
+            If None, a new mask will be created according to np.shape(phantom).
     Returns:
-        value: np.float32 
-        Masked mean squared error (the best value is 0.0).
+        value : np.float32 
+            Masked mean squared error (the best value is 0.0).
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
@@ -54,16 +55,6 @@ def MAMSE(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None) -> np
     return np.sum((img_1 - img_2)**2)/np.nonzero(mask)
 
 def normalized(ref: np.ndarray, tr_low: np.float32 = -0.2, tr_hi: np.float32 = 3.5) -> np.ndarray:
-    """Normalize image.
-    
-    Parameters:
-        ref: np.ndarray
-        Not normalized image.
-    
-    Returns:
-        img: np.ndarray
-        Normalized image.
-    """
     img = ref.copy()
     img = (img - tr_low)/(tr_hi - tr_low)
     img = np.where(img < 0.0, 0.0, img)
@@ -71,15 +62,6 @@ def normalized(ref: np.ndarray, tr_low: np.float32 = -0.2, tr_hi: np.float32 = 3
     return img
 
 def make_tensor(img: np.ndarray) -> torch.Tensor:
-    """Make tensor from np.ndarray
-    
-    Parameters:
-        img: np.ndarray
-        The standard image.
-
-    Returns:
-        torch.Tensor
-    """
     temp = np.zeros((1, 1, np.shape(img)[0], np.shape(img)[1]))
     temp[0, 0, :, :] = img.copy()
     return torch.Tensor(np.array(temp))
@@ -89,17 +71,18 @@ def MASSIM(phantom: np.ndarray, recon: np.ndarray, mask: np.ndarray = None):
     """Calculate Masked Structural Similarity Index Measure.
     
     Parameters:
-        phantom: np.ndarray, shape (n, n)
-        Correct values.
+        phantom : np.ndarray, shape (n, n)
+            Correct values.
 
-        recon: np.ndarray, shape (n, n)
-        Estimated values.
+        recon : np.ndarray, shape (n, n)
+            Estimated values.
 
-        mask: np.ndarray
-        Mask by which the MASSIM should be calculated. If None, a new mask will be created according to np.shape(phantom).
+        mask : np.ndarray
+            Mask by which the MASSIM should be calculated. 
+            If None, a new mask will be created according to np.shape(phantom).
     Returns:
-        value: np.float32 
-        Masked Structural Similarity Index Measure (the best value is 1.0).
+        value : np.float32 
+            Masked Structural Similarity Index Measure (the best value is 1.0).
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
@@ -120,17 +103,17 @@ def MASTRESS(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
     """Calculate Masked standardised residual sum of squares.
     
     Parameters:
-        phantom: np.ndarray, shape (n, n)
-        Correct values.
+        phantom : np.ndarray, shape (n, n)
+            Correct values.
 
-        recon: np.ndarray, shape (n, n)
-        Estimated values.
+        recon : np.ndarray, shape (n, n)
+            Estimated values.
 
-        mask: np.ndarray
-        Mask by which the MASTRESS should be calculated. If None, a new mask will be created according to np.shape(phantom).
+        mask : np.ndarray
+            Mask by which the MASTRESS should be calculated. If None, a new mask will be created according to np.shape(phantom).
     Returns:
-        value: np.float32 
-        Masked standardised residual sum of squares.
+        value : np.float32 
+            Masked standardised residual sum of squares.
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
@@ -153,17 +136,17 @@ def MANRMSD(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
     """Calculate Masked normalized root mean squared difference.
     
     Parameters:
-        phantom: np.ndarray, shape (n, n)
-        Correct values.
+        phantom : np.ndarray, shape (n, n)
+            Correct values.
 
-        recon: np.ndarray, shape (n, n)
-        Estimated values.
+        recon : np.ndarray, shape (n, n)
+            Estimated values.
 
-        mask: np.ndarray
-        Mask by which the MANRMSD should be calculated. If None, a new mask will be created according to np.shape(phantom).
+        mask : np.ndarray
+            Mask by which the MANRMSD should be calculated. If None, a new mask will be created according to np.shape(phantom).
     Returns:
-        value: np.float32 
-        Masked normalized root mean squared difference.
+        value : np.float32 
+            Masked normalized root mean squared difference.
     """
     if mask is None:
         mask = np.ones(np.shape(phantom))
@@ -181,23 +164,19 @@ def MANRMSD(recon: np.ndarray, phantom: np.ndarray, mask: np.ndarray = None):
 func_dict = {'MAMSE': MAMSE, 'MASSIM': MASSIM, 'MASTRESS': MASTRESS, 'MANRMSD': MANRMSD}
 
 def create_circle_mask(radius: int) -> np.ndarray:
-    """Create circle mask by radius."""
     mask = cv2.circle(np.zeros((256, 256)), (128, 128), radius, (1), -1)
     return mask
 
 def create_square_mask(radius: int) -> np.ndarray:
-    """Create square mask by half the side of a square."""
     mask = cv2.rectangle(np.zeros((256, 256)), (128-radius, 128-radius), 
                          (127+radius, 127+radius), (1), -1)
     return mask
 
 def create_crop(ref: np.ndarray, radius: int) -> np.ndarray:
-    """Create creates a square cutout from an image corresponding to half the side of a square."""
     img = ref.copy()
     return img[(128-radius):(128+radius), (128-radius):(128+radius)]
 
 def save_table(table: list[list], filename: str, path_to_save: str = None) -> None:
-    """Save table."""
     if path_to_save is None:
         with open(f'{filename}.tsv', 'w') as file:
             writer = csv.writer(file, delimiter='\t')
